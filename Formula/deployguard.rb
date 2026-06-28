@@ -274,12 +274,15 @@ class Deployguard < Formula
 
     resources.each do |r|
       if r.name == "pydantic-core"
-        # pydantic-core is a Rust extension. Homebrew's cached_download has a
-        # hash prefix (e.g. "abc123--pydantic_core-...whl") which pip rejects
-        # as an invalid wheel filename. Copy to a proper name first.
+        # pydantic-core is a Rust extension. Homebrew creates the venv --without-pip
+        # so libexec/bin/pip doesn't exist. Use system Python's pip with --python to
+        # target the venv. Also copy cached wheel to a valid filename (Homebrew prefixes
+        # cache files with a hash that pip rejects as an invalid wheel name).
         whl = buildpath/File.basename(r.url)
         cp r.cached_download, whl
-        system libexec/"bin/pip", "install", "--no-deps", "--ignore-installed", whl
+        system Formula["python@3.12"].opt_bin/"python3.12", "-m", "pip",
+               "--python=#{libexec}/bin/python3.12",
+               "install", "--no-deps", "--ignore-installed", whl
       else
         venv.pip_install r
       end
