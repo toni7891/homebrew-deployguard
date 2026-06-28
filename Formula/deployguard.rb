@@ -274,11 +274,12 @@ class Deployguard < Formula
 
     resources.each do |r|
       if r.name == "pydantic-core"
-        # pydantic-core is a Rust extension; Homebrew extracts .whl files before
-        # passing to pip, which breaks source detection. Install from the cached
-        # wheel file directly so pip treats it as a pre-built binary.
-        system libexec/"bin/pip", "install", "--no-deps", "--ignore-installed",
-               r.cached_download
+        # pydantic-core is a Rust extension. Homebrew's cached_download has a
+        # hash prefix (e.g. "abc123--pydantic_core-...whl") which pip rejects
+        # as an invalid wheel filename. Copy to a proper name first.
+        whl = buildpath/File.basename(r.url)
+        cp r.cached_download, whl
+        system libexec/"bin/pip", "install", "--no-deps", "--ignore-installed", whl
       else
         venv.pip_install r
       end
