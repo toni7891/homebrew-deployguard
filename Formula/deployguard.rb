@@ -270,7 +270,21 @@ class Deployguard < Formula
   end
 
   def install
-    virtualenv_install_with_resources
+    venv = virtualenv_create(libexec, "python3.12")
+
+    resources.each do |r|
+      if r.name == "pydantic-core"
+        # pydantic-core is a Rust extension; Homebrew extracts .whl files before
+        # passing to pip, which breaks source detection. Install from the cached
+        # wheel file directly so pip treats it as a pre-built binary.
+        system libexec/"bin/pip", "install", "--no-deps", "--ignore-installed",
+               r.cached_download
+      else
+        venv.pip_install r
+      end
+    end
+
+    venv.pip_install_and_link buildpath
   end
 
   def caveats
